@@ -1,4 +1,28 @@
-// MARK: - Token
+/**
+ The purpose of the Lexer is to transform an unparsed string (such as `toto<b>test</b>toto`)
+ into a list of `FormattedTextToken` (such `[.text("toto"), .openingTag(.bold), .text("test"), .closingTag(.bold), .text("toto")]`
+ 
+ It uses for this two offsets, as described in http://craftinginterpreters.com/image/scanning-on-demand/fields.png
+ (from the awesome Crafting Interpreters online book: http://craftinginterpreters.com/)
+ and iterativly convert the rawString into Tokens.
+ 
+ For more information, read:
+ - http://craftinginterpreters.com/scanning.html
+ - http://craftinginterpreters.com/scanning-on-demand.html
+ 
+ Responsabilities:
+ - parse an utf8 encoded string into `FormattedTextToken` array
+ - handle edge case like empty string, uncompleted tags (why couldn't a string be `"<b test"`)
+ - but does not ensure coherance between tags (eg `"<a>test</b>"`): that is the parser responsability
+ 
+ Collaborators:
+ - produce some `FormattedTextToken` that it self uses:
+   - swift `String` (to represent text part)
+   - `FormattedTextTagType` to represent the markup that needs to be applied to the Text
+ */
+
+
+// MARK: - FormattedTextToken
 
 /**
  Output of the Lexer
@@ -23,6 +47,13 @@ extension FormattedTextToken: Equatable {}
 
 // MARK: - Lexer
 
+/**
+FormattedTextLexer transforms a raw text (UTF-8 string) into a list of `FormattedTextLexer`
+
+- parameter text: the raw text thats needs to be formatted. This text (eg `<b>test</b>`) contains some text parts (eg `"test"`) and some tag (eg: `<b>` to open` or `</b>` to close)
+- returns: an array of `FormattedTextToken`
+- warning: so far the lexer did not throw (maybe in the future it will throw on unexpected character such as null byte `"\0"`). It expects the input string to be UTF-8.
+*/
 class FormattedTextLexer {
     // MARK: -Input & Output
     
