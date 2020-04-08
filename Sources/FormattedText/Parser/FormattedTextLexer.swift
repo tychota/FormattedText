@@ -1,5 +1,5 @@
 /**
- The purpose of the Lexer is to transform an unparsed string (such as `toto<b>test</b>toto`)
+ The purpose of the `FormattedTextLexer` is to transform an unparsed string (such as `toto<b>test</b>toto`)
  into a list of `FormattedTextToken` (such `[.text("toto"), .openingTag(.bold), .text("test"), .closingTag(.bold), .text("toto")]`
  
  It uses for this two offsets, as described in http://craftinginterpreters.com/image/scanning-on-demand/fields.png
@@ -16,9 +16,8 @@
  - but does not ensure coherance between tags (eg `"<a>test</b>"`): that is the parser responsability
  
  Collaborators:
- - produce some `FormattedTextToken` that it self uses:
-   - swift `String` (to represent text part)
-   - `FormattedTextTagType` to represent the markup that needs to be applied to the Text
+ - consume a raw swift string
+ - produce an array of `FormattedTextToken` that itself uses: 1) swift `String` (to represent text part) 2) `FormattedTextStyle` to represent the markup that needs to be applied to the text
  */
 
 
@@ -55,11 +54,11 @@ FormattedTextLexer transforms a raw text (UTF-8 string) into a list of `Formatte
 - warning: so far the lexer did not throw (maybe in the future it will throw on unexpected character such as null byte `"\0"`). It expects the input string to be UTF-8.
 */
 class FormattedTextLexer {
-    // MARK: -Input & Output
+    // MARK: - Input & Output
     
-    /// input text, as a utf8 parsed string
+    /// Input text, as a utf8 parsed string
     private var text: String
-    /// results token
+    /// Results token
     private var tokens: [FormattedTextToken] = []
     
     // MARKS: - Offsets
@@ -80,7 +79,7 @@ class FormattedTextLexer {
     
     // MARK: - Public API
     
-    /// We first init a parser with a text (Swift string, parsed as utf8)
+    /// Initilizes a Lexer with a text (Swift string, parsed as utf8)
     init(text: String) {
         self.text = text
     }
@@ -97,20 +96,20 @@ class FormattedTextLexer {
     
     // MARK: - private
     
-    /// Scan one token, either a tag or by default a text
+    /// Scans one token, either a tag or by default a text
     private func scanToken() {
-        // Step 1: Greb next char
+        // Step 1: Grabs next char
         let char = advance()
         
         switch char {
             
         // Step 2a: If it is a "<"
         case "<":
-            // Step 2a.1: Try matching an opening tag <x>
+            // Step 2a.1: Tries matching an opening tag <x>
             if matchEndOfOpeningTag(value: "b") {
                 tokens.append(.openingTag(type: .bold))
             
-            // Step 2a.2: or try matching an closing tag </x>
+            // Step 2a.2: or tries matching an closing tag </x>
             } else if matchEndOfClosingTag(value: "b") {
                 tokens.append(.closingTag(type: .bold))
             
@@ -119,11 +118,11 @@ class FormattedTextLexer {
                     fallthrough
             }
         default:
-            // Step 2b.1: Advance current offset until we reach a tag or the end of the file
+            // Step 2b.1: Advances current offset until we reach a tag or the end of the file
             while !checkTag() && !isAtEnd() {
                 _ = advance()
             }
-            // Step 2b.1: And extract the susbtring
+            // Step 2b.1: And extracts the susbtring
             let value = text[startIndex ..< currentIndex]
             tokens.append(.string(value: value))
         }
@@ -131,31 +130,31 @@ class FormattedTextLexer {
     
     // MARK: - Utility function
     
-    /// Check if we have parse the full screen
+    /// Checks if we have parse the full screen
     private func isAtEnd() -> Bool {
         return currentIndex >= text.count
     }
     
-    /// Advance `current`  offset from `n` to `n+1` and return the char at `n`
+    /// Advances `current`  offset from `n` to `n+1` and return the char at `n`
     private func advance() -> String {
         currentIndex += 1
         return text[currentIndex - 1]
     }
     
-    /// Look forward at the char at `n` without changing the offset
+    /// Looks forward at the char at `n` without changing the offset
     private func peek() -> String {
         // If we are at end, return null bit
         guard !isAtEnd() else { return "\0" }
         return text[currentIndex]
     }
     
-    /// Return the char at `n` without changing the offset
+    /// Returns the char at `n` without changing the offset
     private func peekNext(number: Int = 1) -> String {
         guard currentIndex + number <= text.count else { return "\0" }
         return text[currentIndex + number]
     }
     
-    /// Check if next char is `expected`
+    /// Checks if next char is `expected`
     /// - if true, advance the `current` offset
     private func match(_ expected: String) -> Bool {
         guard !isAtEnd() else { return false }
@@ -167,7 +166,7 @@ class FormattedTextLexer {
     
     // MARK: - Helper
     
-    /// Peek (look forward but without any offset change) tag `<x>` or `</x>`
+    /// Peeks (looks forward but without any offset change) tag `<x>` or `</x>`
     private func checkTag() -> Bool {
         guard peek() == "<" else { return false }
         
@@ -183,7 +182,7 @@ class FormattedTextLexer {
         }
     }
     
-    /// Match `x>`, given the already matched `<`, where `x` is one of the tag name (`b`)
+    /// Matches `x>`, given the already matched `<`, where `x` is one of the tag name (`b`)
     private func matchEndOfOpeningTag(value: String) -> Bool {
         guard match(value) else { return false }
         guard match(">") else { return false }
@@ -191,7 +190,7 @@ class FormattedTextLexer {
         return true
     }
     
-    /// Match `</x>`, given the already matched `<`, where `x` is one of the tag name (`b`)
+    /// Matches `</x>`, given the already matched `<`, where `x` is one of the tag name (`b`)
     private func matchEndOfClosingTag(value: String) -> Bool {
         guard match("/") else { return false }
         guard match(value) else { return false }
