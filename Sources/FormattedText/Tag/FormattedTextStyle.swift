@@ -1,4 +1,4 @@
 /// Represents the modifier supported
-enum FormattedTextTagType: String {
+enum FormattedTextStyle: String {
     case bold = "b"
 }

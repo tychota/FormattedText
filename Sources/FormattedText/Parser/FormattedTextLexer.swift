@@ -37,9 +37,9 @@ enum FormattedTextToken {
     /// Raw string token, with a string value
     case string(value: String)
     /// Opening tag, eg: `<b>`
-    case openingTag(type: FormattedTextTagType)
+    case openingTag(type: FormattedTextStyle)
     /// Closing tag, eg: `</b>`
-    case closingTag(type: FormattedTextTagType)
+    case closingTag(type: FormattedTextStyle)
 }
 
 
